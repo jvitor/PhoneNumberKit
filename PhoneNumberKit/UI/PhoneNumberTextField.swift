@@ -69,6 +69,7 @@ open class PhoneNumberTextField: UITextField, UITextFieldDelegate {
             }
             if self.withExamplePlaceholder {
                 self.updatePlaceholder()
+                self.updateFlag()
             }
         }
     }
@@ -93,6 +94,7 @@ open class PhoneNumberTextField: UITextField, UITextFieldDelegate {
         didSet {
             if self.withExamplePlaceholder {
                 self.updatePlaceholder()
+                self.updateFlag()
             } else {
                 attributedPlaceholder = nil
             }
@@ -110,6 +112,7 @@ open class PhoneNumberTextField: UITextField, UITextFieldDelegate {
     }() {
         didSet {
             self.updatePlaceholder()
+            self.updateFlag()
         }
     }
 
@@ -123,6 +126,7 @@ open class PhoneNumberTextField: UITextField, UITextFieldDelegate {
     }() {
         didSet {
             self.updatePlaceholder()
+            self.updateFlag()
         }
     }
     #endif
@@ -219,7 +223,7 @@ open class PhoneNumberTextField: UITextField, UITextFieldDelegate {
         }
         super.layoutSubviews()
     }
-    
+
     // MARK: - Insets
     private var insets: UIEdgeInsets?
     private var clearButtonPadding: CGFloat?
@@ -264,14 +268,14 @@ open class PhoneNumberTextField: UITextField, UITextFieldDelegate {
         super.init(frame: frame)
         self.setup()
     }
-    
-   
+
+
     /**
      Initialize an instance with specific insets and clear button padding.
 
      This initializer creates an instance of the class with custom UIEdgeInsets and padding for the clear button.
      Both of these parameters are used to customize the appearance of the text field and its clear button within the class.
-     
+
      - Parameters:
        - insets: The UIEdgeInsets to be applied to the text field's bounding rectangle. These insets define the padding
          that is applied within the text field's bounding rectangle. A UIEdgeInsets value contains insets for
@@ -316,7 +320,7 @@ open class PhoneNumberTextField: UITextField, UITextFieldDelegate {
 
     open func updateFlag() {
         guard self.withFlag else { return }
-        
+
         if let phoneNumber = phoneNumber,
            let regionCode = phoneNumber.regionID,
            regionCode != currentRegion,
@@ -324,7 +328,7 @@ open class PhoneNumberTextField: UITextField, UITextFieldDelegate {
             _defaultRegion = regionCode
             partialFormatter.defaultRegion = regionCode
         }
-        
+
         let flagBase = UnicodeScalar("🇦").value - UnicodeScalar("A").value
 
         let flag = self.currentRegion
@@ -338,7 +342,9 @@ open class PhoneNumberTextField: UITextField, UITextFieldDelegate {
             self.flagButton.setTitle(flag + " +\(countryCode) ", for: .normal)
 
             if #available(iOS 13.0, tvOS 13.0, *) {
-                let imageConfig = UIImage.SymbolConfiguration(pointSize: 12, weight: .light, scale: .small)
+                let imageConfig = UIImage.SymbolConfiguration(pointSize: 12,
+                                                              weight: .light,
+                                                              scale: .small)
                 let image = UIImage(systemName: "chevron.down", withConfiguration: imageConfig)
 
                 self.flagButton.setImage(image, for: .normal)
@@ -364,8 +370,8 @@ open class PhoneNumberTextField: UITextField, UITextFieldDelegate {
 
         let font = self.font ?? UIFont.preferredFont(forTextStyle: .body)
         self.flagButton.titleLabel?.font = font
-        self.flagButton.setTitleColor(textColor, for: .normal)
-        self.flagButton.tintColor = textColor
+        self.flagButton.setTitleColor(countryCodePlaceholderColor, for: .normal)
+        self.flagButton.tintColor = countryCodePlaceholderColor
     }
 
     open func updatePlaceholder() {
@@ -379,14 +385,21 @@ open class PhoneNumberTextField: UITextField, UITextFieldDelegate {
         let ph = NSMutableAttributedString(string: example, attributes: [.font: font])
 
         #if compiler(>=5.1)
-        if #available(iOS 13.0, *), prefix {
-            // because the textfield will automatically handle insert & removal of the international prefix we make the
-            // prefix darker to indicate non default behaviour to users, this behaviour currently only happens on iOS 13
-            // and above just because that is where we have access to label colors
-            let firstSpaceIndex = example.firstIndex(where: { $0 == " " }) ?? example.startIndex
+        if #available(iOS 13.0, *) {
+            if prefix {
+                // because the textfield will automatically handle insert & removal of the international prefix we make the
+                // prefix darker to indicate non default behaviour to users, this behaviour currently only happens on iOS 13
+                // and above just because that is where we have access to label colors
 
-            ph.addAttribute(.foregroundColor, value: self.countryCodePlaceholderColor, range: NSRange(..<firstSpaceIndex, in: example))
-            ph.addAttribute(.foregroundColor, value: self.numberPlaceholderColor, range: NSRange(firstSpaceIndex..., in: example))
+                let firstSpaceIndex = example.firstIndex(where: { $0 == " " }) ?? example.startIndex
+
+                ph.addAttribute(.foregroundColor, value: self.countryCodePlaceholderColor, range: NSRange(..<firstSpaceIndex, in: example))
+                ph.addAttribute(.foregroundColor, value: self.numberPlaceholderColor, range: NSRange(firstSpaceIndex..., in: example))
+            }
+            else {
+                let firstIndex = example.startIndex
+                ph.addAttribute(.foregroundColor, value: self.numberPlaceholderColor, range: NSRange(firstIndex..., in: example))
+            }
         }
         #endif
 
@@ -489,7 +502,7 @@ open class PhoneNumberTextField: UITextField, UITextFieldDelegate {
         guard self.isPartialFormatterEnabled else {
             return true
         }
-        
+
         // This allows for the case when a user autocompletes a phone number:
         if range == NSRange(location: 0, length: 0) && string.isBlank {
             return true
@@ -622,7 +635,7 @@ extension PhoneNumberTextField: CountryCodePickerDelegate {
 // MARK: - Insets
 
 extension PhoneNumberTextField {
-    
+
     open override func textRect(forBounds bounds: CGRect) -> CGRect {
         if let insets = self.insets {
             return super.textRect(forBounds: bounds.inset(by: insets))
@@ -630,7 +643,7 @@ extension PhoneNumberTextField {
             return super.textRect(forBounds: bounds)
         }
     }
-    
+
     open override func editingRect(forBounds bounds: CGRect) -> CGRect {
         if let insets = self.insets {
             return super.editingRect(forBounds: bounds
@@ -639,7 +652,7 @@ extension PhoneNumberTextField {
             return super.editingRect(forBounds: bounds)
         }
     }
-    
+
     open override func clearButtonRect(forBounds bounds: CGRect) -> CGRect {
         if let insets = self.insets,
            let clearButtonPadding = self.clearButtonPadding {
