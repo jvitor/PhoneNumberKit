@@ -81,6 +81,14 @@ open class PhoneNumberTextField: UITextField, UITextFieldDelegate {
         }
     }
 
+    public var withSepareFields: Bool = false {
+        didSet {
+            self.keyboardType = .numberPad
+            self.updateFlag()
+        }
+    }
+
+
     public var withExamplePlaceholder: Bool = false {
         didSet {
             if self.withExamplePlaceholder {
@@ -147,7 +155,7 @@ open class PhoneNumberTextField: UITextField, UITextFieldDelegate {
     public private(set) lazy var partialFormatter: PartialFormatter = PartialFormatter(
         phoneNumberKit: phoneNumberKit,
         defaultRegion: defaultRegion,
-        withPrefix: withPrefix,
+        withPrefix: (self.withPrefix && self.withSepareFields == false) ? true : false,
         ignoreIntlNumbers: true
     )
 
@@ -206,7 +214,7 @@ open class PhoneNumberTextField: UITextField, UITextFieldDelegate {
 
     open override func layoutSubviews() {
         if self.withFlag { // update the width of the flagButton automatically, iOS <13 doesn't handle this for you
-            let width = self.flagButton.systemLayoutSizeFitting(bounds.size).width
+            let width = self.flagButton.systemLayoutSizeFitting(self.bounds.size).width
             self.flagButton.frame.size.width = width
         }
         super.layoutSubviews()
@@ -298,6 +306,7 @@ open class PhoneNumberTextField: UITextField, UITextFieldDelegate {
         self.autocorrectionType = .no
         self.keyboardType = .phonePad
         super.delegate = self
+        self.flagButton.contentEdgeInsets = UIEdgeInsets(top: 0,left: 0,bottom: 0,right: 6)
     }
 
     func internationalPrefix(for countryCode: String) -> String? {
@@ -324,7 +333,22 @@ open class PhoneNumberTextField: UITextField, UITextFieldDelegate {
             .compactMap { UnicodeScalar(flagBase + $0.value)?.description }
             .joined()
 
-        self.flagButton.setTitle(flag + " ", for: .normal)
+        if withSepareFields {
+            let countryCode = phoneNumberKit.countryCode(for: currentRegion)?.description ?? ""
+            self.flagButton.setTitle(flag + " +\(countryCode) ", for: .normal)
+
+            if #available(iOS 13.0, tvOS 13.0, *) {
+                let imageConfig = UIImage.SymbolConfiguration(pointSize: 12, weight: .light, scale: .small)
+                let image = UIImage(systemName: "chevron.down", withConfiguration: imageConfig)
+
+                self.flagButton.setImage(image, for: .normal)
+                self.flagButton.semanticContentAttribute = .forceRightToLeft
+            }
+        }
+        else {
+            self.flagButton.setTitle(flag + " ", for: .normal)
+        }
+
         self.flagButton.accessibilityLabel = NSLocalizedString(
             "PhoneNumberKit.CountryCodePickerEntryButton.AccessibilityLabel",
             value: "Select your country code",
@@ -337,21 +361,25 @@ open class PhoneNumberTextField: UITextField, UITextFieldDelegate {
                 comment: "Accessiblity hint for currently selected country code")
             self.flagButton.accessibilityHint = String(format: selectedFormat, countryName)
         }
-        let fontSize = (font ?? UIFont.preferredFont(forTextStyle: .body)).pointSize
-        self.flagButton.titleLabel?.font = UIFont.systemFont(ofSize: fontSize)
+
+        let font = self.font ?? UIFont.preferredFont(forTextStyle: .body)
+        self.flagButton.titleLabel?.font = font
+        self.flagButton.setTitleColor(textColor, for: .normal)
+        self.flagButton.tintColor = textColor
     }
 
     open func updatePlaceholder() {
         guard self.withExamplePlaceholder else { return }
         if isEditing, !(self.text ?? "").isEmpty { return } // No need to update a placeholder while the placeholder isn't showing
 
-        let format = self.withPrefix ? PhoneNumberFormat.international : .national
-        let example = self.phoneNumberKit.getFormattedExampleNumber(forCountry: self.currentRegion, withFormat: format, withPrefix: self.withPrefix) ?? "12345678"
+        let prefix = (self.withPrefix && self.withSepareFields == false) ? true : false
+        let format = (prefix || self.withSepareFields) ? PhoneNumberFormat.international : .national
+        let example = self.phoneNumberKit.getFormattedExampleNumber(forCountry: self.currentRegion, withFormat: format, withPrefix: prefix) ?? "12345678"
         let font = self.font ?? UIFont.preferredFont(forTextStyle: .body)
         let ph = NSMutableAttributedString(string: example, attributes: [.font: font])
 
         #if compiler(>=5.1)
-        if #available(iOS 13.0, *), self.withPrefix {
+        if #available(iOS 13.0, *), prefix {
             // because the textfield will automatically handle insert & removal of the international prefix we make the
             // prefix darker to indicate non default behaviour to users, this behaviour currently only happens on iOS 13
             // and above just because that is where we have access to label colors
@@ -513,7 +541,8 @@ open class PhoneNumberTextField: UITextField, UITextFieldDelegate {
     }
 
     open func textFieldDidBeginEditing(_ textField: UITextField) {
-        if self.withExamplePlaceholder, self.withPrefix, let countryCode = phoneNumberKit.countryCode(for: currentRegion)?.description, (text ?? "").isEmpty {
+        let prefix = (self.withPrefix && self.withSepareFields == false) ? true : false
+        if self.withExamplePlaceholder, prefix, let countryCode = phoneNumberKit.countryCode(for: currentRegion)?.description, (text ?? "").isEmpty {
             text = "+" + countryCode + " "
         }
         self._delegate?.textFieldDidBeginEditing?(textField)
@@ -553,7 +582,8 @@ open class PhoneNumberTextField: UITextField, UITextFieldDelegate {
     }
 
     private func updateTextFieldDidEndEditing(_ textField: UITextField) {
-        if self.withExamplePlaceholder, self.withPrefix, let countryCode = phoneNumberKit.countryCode(for: currentRegion)?.description,
+        let prefix = (self.withPrefix && self.withSepareFields == false) ? true : false
+        if self.withExamplePlaceholder, prefix, let countryCode = phoneNumberKit.countryCode(for: currentRegion)?.description,
             let text = textField.text,
             text == internationalPrefix(for: countryCode) {
             textField.text = ""
@@ -567,7 +597,15 @@ open class PhoneNumberTextField: UITextField, UITextFieldDelegate {
 extension PhoneNumberTextField: CountryCodePickerDelegate {
 
     public func countryCodePickerViewControllerDidPickCountry(_ country: CountryCodePickerViewController.Country) {
-        text = isEditing ? "+" + country.prefix : ""
+
+        let prefix = (self.withPrefix && self.withSepareFields == false) ? true : false
+        if prefix {
+            text = isEditing ? "+" + country.prefix : ""
+        }
+        else {
+            text = ""
+        }
+
         _defaultRegion = country.code
         partialFormatter.defaultRegion = country.code
         updateFlag()

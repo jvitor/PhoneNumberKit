@@ -112,6 +112,14 @@ phoneNumberKit.countries(withCode: 33)
 phoneNumberKit.countryCode(for: "FR")
 ```
 
+## Separate Country Code and Prefix from TextField
+
+You can separate the Prefix from the Textfield itself by simpling setting "withSepareFields" to true. By doing that, the leftView will automatically add the country prefix near the flag and also add a chevron.down image in order to show the user that the input is touchable. 
+
+```swift
+textField.withSepareFields = true
+```
+
 ## Customize Country Picker
 
 You can customize colors and fonts on the Country Picker View Controller by overriding the property "withDefaultPickerUIOptions"
