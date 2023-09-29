@@ -408,6 +408,7 @@ open class PhoneNumberTextField: UITextField, UITextFieldDelegate {
 
     @objc func didPressFlagButton() {
         guard withDefaultPickerUI else { return }
+        self.resignFirstResponder()
         let vc = CountryCodePickerViewController(phoneNumberKit: phoneNumberKit,
                                                  options: withDefaultPickerUIOptions)
         vc.delegate = self
