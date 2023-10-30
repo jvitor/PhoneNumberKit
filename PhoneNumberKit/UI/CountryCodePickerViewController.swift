@@ -112,12 +112,12 @@ public class CountryCodePickerViewController: UITableViewController {
 
     public override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        if let nav = navigationController {
-            shouldRestoreNavigationBarToHidden = nav.isNavigationBarHidden
-            nav.setNavigationBarHidden(false, animated: true)
-        }
-        if let nav = navigationController, nav.isBeingPresented && nav.viewControllers.count == 1 {
-            navigationItem.setRightBarButton(cancelButton, animated: true)
+
+        if let backgroundColor = options.backgroundColor {
+            navigationController?.navigationBar.barTintColor = backgroundColor
+            navigationController?.navigationBar.backgroundColor = backgroundColor
+            searchController.searchBar.backgroundColor = backgroundColor
+            tableView.backgroundColor = backgroundColor
         }
     }
 
@@ -127,6 +127,7 @@ public class CountryCodePickerViewController: UITableViewController {
         if let tintColor = options.tintColor {
             view.tintColor = tintColor
             navigationController?.navigationBar.tintColor = tintColor
+            navigationController?.navigationBar.titleTextAttributes = [.foregroundColor: tintColor]
 
             let textFieldInsideSearchBar = searchController.searchBar.value(forKey: "searchField") as? UITextField
             textFieldInsideSearchBar?.textColor = tintColor
@@ -138,13 +139,6 @@ public class CountryCodePickerViewController: UITableViewController {
             glassIconView?.tintColor = tintColor
         }
 
-        if let backgroundColor = options.backgroundColor {
-            navigationController?.navigationBar.backgroundColor = backgroundColor
-            navigationController?.navigationBar.isTranslucent = false
-            searchController.searchBar.backgroundColor = backgroundColor
-            tableView.backgroundColor = backgroundColor
-        }
-
         if let separator = options.separatorColor {
             tableView.separatorColor = separator
         }
@@ -152,7 +146,6 @@ public class CountryCodePickerViewController: UITableViewController {
 
     public override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
-        navigationController?.setNavigationBarHidden(shouldRestoreNavigationBarToHidden, animated: true)
     }
 
     @objc func dismissAnimated() {

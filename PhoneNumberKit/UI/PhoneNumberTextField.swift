@@ -416,6 +416,7 @@ open class PhoneNumberTextField: UITextField, UITextFieldDelegate {
             nav.pushViewController(vc, animated: true)
         } else {
             let nav = UINavigationController(rootViewController: vc)
+            nav.navigationBar.isTranslucent = false
             if modalPresentationStyle != nil {
                 nav.modalPresentationStyle = modalPresentationStyle!
             }
