@@ -20,6 +20,7 @@ import UIKit
  - Parameter tintColor: Default TintColor used on the view
  - Parameter cellBackgroundColor: UIColor for the cell background
  - Parameter cellBackgroundColorSelection: UIColor for the cell selectedBackgroundView
+ - Parameter cellRoundedCorners: Used to round corners on cell
  */
 public struct CountryCodePickerOptions {
 
@@ -33,7 +34,8 @@ public struct CountryCodePickerOptions {
                 detailTextLabelFont: UIFont? = nil,
                 tintColor: UIColor? = nil,
                 cellBackgroundColor: UIColor? = nil,
-                cellBackgroundColorSelection: UIColor? = nil) {
+                cellBackgroundColorSelection: UIColor? = nil,
+                cellRoundedCorners: Bool = false) {
 
         self.backgroundColor = backgroundColor
         self.separatorColor = separatorColor
@@ -44,6 +46,7 @@ public struct CountryCodePickerOptions {
         self.tintColor = tintColor
         self.cellBackgroundColor = cellBackgroundColor
         self.cellBackgroundColorSelection = cellBackgroundColorSelection
+        self.cellRoundedCorners = cellRoundedCorners
     }
 
     public var backgroundColor: UIColor?
@@ -55,5 +58,6 @@ public struct CountryCodePickerOptions {
     public var tintColor: UIColor?
     public var cellBackgroundColor: UIColor?
     public var cellBackgroundColorSelection: UIColor?
+    public var cellRoundedCorners: Bool = false
 }
 #endif

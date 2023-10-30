@@ -108,19 +108,6 @@ public class CountryCodePickerViewController: UITableViewController {
         navigationItem.hidesSearchBarWhenScrolling = !PhoneNumberKit.CountryCodePicker.alwaysShowsSearchBar
 
         definesPresentationContext = true
-
-        if let tintColor = options.tintColor {
-            view.tintColor = tintColor
-            navigationController?.navigationBar.tintColor = tintColor
-        }
-
-        if let backgroundColor = options.backgroundColor {
-            tableView.backgroundColor = backgroundColor
-        }
-
-        if let separator = options.separatorColor {
-            tableView.separatorColor = separator
-        }
     }
 
     public override func viewWillAppear(_ animated: Bool) {
@@ -131,6 +118,35 @@ public class CountryCodePickerViewController: UITableViewController {
         }
         if let nav = navigationController, nav.isBeingPresented && nav.viewControllers.count == 1 {
             navigationItem.setRightBarButton(cancelButton, animated: true)
+        }
+    }
+
+    public override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+
+        if let tintColor = options.tintColor {
+            view.tintColor = tintColor
+            navigationController?.navigationBar.tintColor = tintColor
+
+            let textFieldInsideSearchBar = searchController.searchBar.value(forKey: "searchField") as? UITextField
+            textFieldInsideSearchBar?.textColor = tintColor
+            let textFieldInsideSearchBarLabel = textFieldInsideSearchBar!.value(forKey: "placeholderLabel") as? UILabel
+            textFieldInsideSearchBarLabel?.textColor = tintColor
+
+            let glassIconView = textFieldInsideSearchBar?.leftView as? UIImageView
+            glassIconView?.image = glassIconView?.image?.withRenderingMode(.alwaysTemplate)
+            glassIconView?.tintColor = tintColor
+        }
+
+        if let backgroundColor = options.backgroundColor {
+            navigationController?.navigationBar.backgroundColor = backgroundColor
+            navigationController?.navigationBar.isTranslucent = false
+            searchController.searchBar.backgroundColor = backgroundColor
+            tableView.backgroundColor = backgroundColor
+        }
+
+        if let separator = options.separatorColor {
+            tableView.separatorColor = separator
         }
     }
 
@@ -155,13 +171,13 @@ public class CountryCodePickerViewController: UITableViewController {
         isFiltering ? filteredCountries.count : countries[section].count
     }
 
-    public override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: Cell.reuseIdentifier, for: indexPath)
-        let country = self.country(for: indexPath)
+    public override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        return 60
+    }
 
-        if let cellBackgroundColor = options.cellBackgroundColor {
-            cell.backgroundColor = cellBackgroundColor
-        }
+    public override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: Cell.reuseIdentifier, for: indexPath) as! Cell
+        let country = self.country(for: indexPath)
 
         cell.textLabel?.text = country.prefix + " " + country.flag
 
@@ -183,12 +199,18 @@ public class CountryCodePickerViewController: UITableViewController {
             cell.detailTextLabel?.font = detailTextLabelFont
         }
 
-        if let cellBackgroundColorSelection = options.cellBackgroundColorSelection {
-            let view = UIView()
-            view.backgroundColor = cellBackgroundColorSelection
-            cell.selectedBackgroundView = view
+
+        if let cellBackgroundColor = options.cellBackgroundColor {
+            if options.cellRoundedCorners {
+                cell.cellBgColor = cellBackgroundColor
+            }
+            else {
+                cell.backgroundColor = cellBackgroundColor
+            }
         }
 
+        cell.selectionStyle = .none
+        cell.roundCorners = options.cellRoundedCorners
         return cell
     }
 
@@ -203,6 +225,15 @@ public class CountryCodePickerViewController: UITableViewController {
             return NSLocalizedString("PhoneNumberKit.CountryCodePicker.Common", value: "Common", comment: "Name of \"Common\" section")
         }
         return countries[section].first?.name.first.map(String.init)
+    }
+
+    public override func tableView(_ tableView: UITableView, willDisplayHeaderView view: UIView, forSection section: Int) {
+        if let view = view as? UITableViewHeaderFooterView,
+           let tintColor = options.tintColor {
+            view.backgroundView?.backgroundColor = .clear
+            view.textLabel?.backgroundColor = UIColor.clear
+            view.textLabel?.textColor = tintColor
+        }
     }
 
     public override func sectionIndexTitles(for tableView: UITableView) -> [String]? {
@@ -224,6 +255,17 @@ public class CountryCodePickerViewController: UITableViewController {
     }
 
     public override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        let cell = tableView.dequeueReusableCell(withIdentifier: Cell.reuseIdentifier, for: indexPath) as! Cell
+
+        if let cellBackgroundColorSelection = options.cellBackgroundColorSelection {
+            if options.cellRoundedCorners {
+                cell.contentView.backgroundColor = cellBackgroundColorSelection
+            }
+            else {
+                cell.backgroundColor = cellBackgroundColorSelection
+            }
+        }
+
         let country = self.country(for: indexPath)
         delegate?.countryCodePickerViewControllerDidPickCountry(country)
         tableView.deselectRow(at: indexPath, animated: true)
@@ -289,13 +331,29 @@ public extension CountryCodePickerViewController {
     class Cell: UITableViewCell {
 
         static let reuseIdentifier = "Cell"
+        var cellBgColor: UIColor = .clear
+        var roundCorners: Bool = false
 
-        override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
+        override init(style: UITableViewCell.CellStyle,
+                      reuseIdentifier: String?) {
             super.init(style: .value2, reuseIdentifier: Self.reuseIdentifier)
         }
 
         required init?(coder: NSCoder) {
             fatalError("init(coder:) has not been implemented")
+        }
+
+        public override func layoutSubviews() {
+          super.layoutSubviews()
+
+            if roundCorners {
+                let margins = UIEdgeInsets(top: 0, left: 10, bottom: 5, right: 10)
+                contentView.frame = contentView.frame.inset(by: margins)
+                contentView.layer.cornerRadius = 8
+                backgroundColor = .clear
+                contentView.backgroundColor = cellBgColor
+            }
+
         }
     }
 }
