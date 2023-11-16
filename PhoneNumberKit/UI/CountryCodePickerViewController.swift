@@ -19,7 +19,7 @@ public class CountryCodePickerViewController: UITableViewController {
     }()
 
     public let phoneNumberKit: PhoneNumberKit
-    
+
     public let options: CountryCodePickerOptions
 
     let commonCountryCodes: [String]
@@ -343,6 +343,16 @@ public extension CountryCodePickerViewController {
                 let margins = UIEdgeInsets(top: 0, left: 10, bottom: 5, right: 10)
                 contentView.frame = contentView.frame.inset(by: margins)
                 contentView.layer.cornerRadius = 8
+
+                if var detailFrame = detailTextLabel?.frame {
+                    if detailFrame.origin.x + detailFrame.size.width + 10 >= contentView.frame.size.width {
+                        detailFrame = CGRect(x: detailFrame.origin.x,
+                                             y: detailFrame.origin.y,
+                                             width: detailFrame.size.width-10,
+                                             height: detailFrame.size.height)
+                        detailTextLabel?.frame = detailFrame
+                    }
+                }
                 backgroundColor = .clear
                 contentView.backgroundColor = cellBgColor
             }
