@@ -345,10 +345,10 @@ public extension CountryCodePickerViewController {
                 contentView.layer.cornerRadius = 8
 
                 if var detailFrame = detailTextLabel?.frame {
-                    if detailFrame.origin.x + detailFrame.size.width + 10 >= contentView.frame.size.width {
+                    if detailFrame.origin.x + detailFrame.size.width + 16 >= contentView.frame.size.width {
                         detailFrame = CGRect(x: detailFrame.origin.x,
                                              y: detailFrame.origin.y,
-                                             width: detailFrame.size.width-10,
+                                             width: detailFrame.size.width-16,
                                              height: detailFrame.size.height)
                         detailTextLabel?.frame = detailFrame
                     }
